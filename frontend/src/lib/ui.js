@@ -39,6 +39,8 @@ function fmtDue(s){const n=dayDiff(s);
   if(n>1&&n<7)return parseIso(s).toLocaleDateString('en-US',{weekday:'long'});
   return shortDate(s);}
 function ago(ts){const m=Math.round((Date.now()-ts)/6e4); if(m<1)return'just now'; if(m<60)return m+' min ago'; const h=Math.round(m/60); if(h<24)return h+' hr ago'; return Math.round(h/24)+' days ago';}
+// crypto.randomUUID only exists on https/localhost; fall back so LAN testing over http works.
+const uuid=()=>crypto.randomUUID?crypto.randomUUID():'10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(+c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>+c/4).toString(16));
 const COLORS=['t1','t2','t3','t4','t5','t6','t7','t8'];
 const TITLES={inbox:'Inbox',today:'Today',upcoming:'Next 7 days',done:'Completed',tags:'Tags'};
 
@@ -264,7 +266,7 @@ function insertQA(txt){const u=ui[dev];const c=u.caret==null?u.qa.length:u.caret
   u.qa=before+sp+txt+tail+after;u.caret=(before+sp+txt+tail).length;u.noSug=false;u.sug=0;setQAInput();fillQA();}
 function addTask(){const u=ui[dev];const p=withDefaults(parse(u.qa),u);if(!p.title)return;
   const tags=[...new Set(p.tags.map(ensureTag).filter(Boolean))];
-  const id=crypto.randomUUID();
+  const id=uuid();
   saveTask({id,title:p.title,tags,due:p.due,pri:p.pri,done:false,doneAt:null,notes:'',created:Date.now(),updated_at:'',deleted_at:null});
   lastAdded={id,at:Date.now()};u.qa='';u.caret=0;u.sug=0;u.noSug=false;
   if(dev==='phone')u.added=p.title;
@@ -287,7 +289,7 @@ function act(cmd,arg,e){const u=ui[dev];const t=taskById(u.task);
     case 'ptag':u.filter=[arg];u.view='inbox';render();break;
     case 'fmode':u.mode=arg;render();break;
     case 'fclear':u.filter=[];render();break;
-    case 'fsave':if(u.filter.length){saveSaved({id:crypto.randomUUID(),name:u.filter.map(f=>'#'+f).join(u.mode==='all'?' + ':' or '),tags:u.filter.slice(),mode:u.mode,updated_at:'',deleted_at:null});render();}break;
+    case 'fsave':if(u.filter.length){saveSaved({id:uuid(),name:u.filter.map(f=>'#'+f).join(u.mode==='all'?' + ':' or '),tags:u.filter.slice(),mode:u.mode,updated_at:'',deleted_at:null});render();}break;
     case 'saved':{const s=liveSaved().find(x=>x.id===arg);if(s){u.filter=s.tags.slice();u.mode=s.mode;if(u.view==='tags'||u.view==='done')u.view='inbox';render();}break;}
     case 'qa-open':u.sheet='qa';u.added=null;u.focus='[data-in="qa"]';render();break;
     case 'sheet-close':u.sheet=null;u.picker=false;render();break;
