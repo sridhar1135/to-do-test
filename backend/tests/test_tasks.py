@@ -71,3 +71,15 @@ def test_sync_push_pull_last_write_wins(client):
     stale = {"tasks": [{"id": tid, "title": "Older edit", "updated_at": (now - timedelta(minutes=5)).isoformat()}]}
     assert client.post("/sync/push", json=stale).json() == {"accepted": 0, "ignored": 1}
     assert client.get("/sync/pull", params={"since": pulled["cursor"]}).json()["tasks"] == []
+
+
+def test_auth_check(client):
+    assert client.get("/auth/check").json() == {"ok": True}
+    assert client.get("/auth/check", headers={"Authorization": "Bearer nope"}).status_code == 401
+
+
+def test_database_url_normalized():
+    from app.config import Settings
+
+    s = Settings(DATABASE_URL="postgres://u:p@host:5432/db")
+    assert s.database_url == "postgresql+psycopg://u:p@host:5432/db"

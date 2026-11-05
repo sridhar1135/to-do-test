@@ -36,18 +36,22 @@ Front end:
 ```bash
 cd frontend
 npm install
-cp .env.example .env          # VITE_API_TOKEN must match TODO_API_TOKEN
+cp .env.example .env          # dev only: VITE_API_TOKEN must match TODO_API_TOKEN
 npm run dev                   # http://localhost:5173
 ```
 
-## Deploy
+## Deploy (Render + Neon, free)
 
-```bash
-TODO_API_TOKEN=<long random string> POSTGRES_PASSWORD=<another> \
-TODO_CORS_ORIGINS='["https://todo.example.com"]' docker compose up -d --build
-```
+One Docker image serves both the app and the API from the same URL. The access key lives only on the server and is typed once on each device, so it is never inside the public page.
 
-Then `npm run build` in `frontend/` (with `VITE_API_URL` pointing at the API) and host `frontend/build/` on any static host over HTTPS. HTTPS is required for the PWA to install on iOS.
+1. **Database:** sign up at [neon.tech](https://neon.tech), create a project, and copy its connection string (`postgresql://...`).
+2. **App:** sign up at [render.com](https://render.com) with GitHub, then **New → Blueprint** and pick this repo. Render reads `render.yaml`. Paste the Neon string as `DATABASE_URL` when asked.
+3. When the deploy finishes, open the service's **Environment** tab and copy `TODO_API_TOKEN`. That is your access key.
+4. Open the `https://<name>.onrender.com` URL and enter the access key. On iPhone/iPad: Safari → Share → **Add to Home Screen**. On Mac: Safari → File → **Add to Dock** (or install from Chrome).
+
+The free Render plan sleeps after 15 minutes idle, so the first sync after a break takes up to a minute. The app still opens instantly and saves changes on the device in the meantime. Every push to `main` redeploys.
+
+Self-hosting instead: `TODO_API_TOKEN=$(openssl rand -hex 24) docker compose up -d --build`, then put HTTPS in front of port 8000 (needed for installing the PWA).
 
 ## API
 

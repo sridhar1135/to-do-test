@@ -1,0 +1,14 @@
+# Render Blueprint: New > Blueprint > pick this repo. Free web service; the database
+# comes from Neon (free) — paste its connection string as DATABASE_URL when asked.
+services:
+  - type: web
+    name: todo
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: TODO_API_TOKEN
+        generateValue: true   # your access key; copy it from the Environment tab
+      - key: DATABASE_URL
+        sync: false           # Neon connection string, entered at setup

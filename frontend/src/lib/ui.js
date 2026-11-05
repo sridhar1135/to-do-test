@@ -204,6 +204,7 @@ function phoneHTML(){const u=ui.phone;let body;
 /* ---------- Mac / desktop browser ---------- */
 function syncFoot(){const s=syncStatus();
   if(s.state==='offline')return '<div class="side-foot"><i class="off"></i>Offline · changes saved on this device</div>';
+  if(s.state==='auth')return '<div class="side-foot"><i class="err"></i>Not signed in · <button class="link" data-act="signout">Enter access key</button></div>';
   if(s.state==='error')return '<div class="side-foot"><i class="err"></i>Can’t reach the server · <button class="link" data-act="sync">Retry</button></div>';
   if(!s.lastSync)return '<div class="side-foot"><i class="off"></i>Syncing…</div>';
   return '<div class="side-foot"><i></i>Synced '+ago(s.lastSync)+'</div>';}
@@ -305,6 +306,7 @@ function act(cmd,arg,e){const u=ui[dev];const t=taskById(u.task);
     case 'pri':if(t){t.pri=+arg;saveTask(t);render();}break;
     case 'del':if(t){deleteTask(t);u.task=null;u.sheet=null;render();}break;
     case 'sync':void syncNow();break;
+    case 'signout':window.dispatchEvent(new Event('todo:auth'));break;
   }}
 
 function devFromEvent(e){return root&&root.contains(e.target)?dev:null;}
@@ -345,6 +347,6 @@ export function mount(el){
   mq.addEventListener('change',()=>{dev=mq.matches?'desk':'phone';render();});
   bind();
   render();
-  startSync(()=>{renderSoft();flashSync();},()=>{if(dev==='desk')renderSoft();});
+  startSync(()=>{renderSoft();flashSync();},()=>{if(syncStatus().state==='auth')window.dispatchEvent(new Event('todo:auth'));if(dev==='desk')renderSoft();});
   setInterval(()=>{if(dev==='desk')renderSoft();},60_000); // keep "Synced N min ago" fresh
 }

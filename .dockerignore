@@ -1,0 +1,9 @@
+**/node_modules
+**/.venv
+**/.env
+**/*.db
+**/__pycache__
+frontend/build
+frontend/.svelte-kit
+frontend/dev-dist
+.git

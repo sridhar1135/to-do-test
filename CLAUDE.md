@@ -22,6 +22,8 @@ npm run check    # svelte-check type checking
 npm run build    # static PWA into build/
 ```
 
+Production: the root `Dockerfile` builds the PWA and serves it from FastAPI (`TODO_FRONTEND_DIR`), so app and API share one origin. Deployed on Render (`render.yaml`) with a Neon Postgres (`DATABASE_URL`). The access key (`TODO_API_TOKEN`, 20+ chars, enforced when serving the app) is entered once per device in the sign-in screen and stored in that browser; never bake it into the build (`VITE_API_TOKEN` is for local dev only).
+
 ## Code map
 
 - `backend/app/models.py`: tables (task, tag, task_tag, saved_filter, counter). `services.py`: quick-add parser, tag helpers, serializers. `routers/`: tasks, tags/saved filters, sync.

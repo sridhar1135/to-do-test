@@ -8,15 +8,41 @@ export type { SavedFilter, Tag, Task };
 
 export const S: { tasks: Task[]; tags: Tag[]; saved: SavedFilter[] } = { tasks: [], tags: [], saved: [] };
 
-type SyncState = 'idle' | 'syncing' | 'offline' | 'error';
+type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'auth';
 let syncState: SyncState = 'idle';
 let lastSync = 0;
 let onRemote: (() => void) | null = null;
 let onStatus: (() => void) | null = null;
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-const API_TOKEN = import.meta.env.VITE_API_TOKEN ?? '';
-const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${API_TOKEN}` };
+// Same origin in production (FastAPI serves the app); VITE_API_URL points at the API in dev.
+const API_URL = import.meta.env.VITE_API_URL ?? '';
+const TOKEN_KEY = 'todo-access-key';
+
+/** The access key is entered once per device and kept in this browser, never built into the page. */
+export function getToken(): string {
+  try {
+    return localStorage.getItem(TOKEN_KEY) || import.meta.env.VITE_API_TOKEN || '';
+  } catch {
+    return import.meta.env.VITE_API_TOKEN || '';
+  }
+}
+
+const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` });
+
+/** Check a key against the server and keep it if it works. */
+export async function signIn(key: string): Promise<'ok' | 'wrong' | 'unreachable'> {
+  try {
+    const res = await fetch(`${API_URL}/auth/check`, { headers: { Authorization: `Bearer ${key}` } });
+    if (res.status === 401) return 'wrong';
+    if (!res.ok) return 'unreachable';
+    localStorage.setItem(TOKEN_KEY, key);
+    return 'ok';
+  } catch {
+    return 'unreachable';
+  }
+}
+
+export class AuthError extends Error {}
 const nowIso = () => new Date().toISOString();
 const IMP = [null, 'low', 'medium', 'high'] as const;
 
@@ -129,20 +155,22 @@ export async function syncNow(): Promise<void> {
       ]);
       const res = await fetch(`${API_URL}/sync/push`, {
         method: 'POST',
-        headers,
+        headers: headers(),
         body: JSON.stringify({
           tags: tags.filter(Boolean),
           tasks: (tasks.filter(Boolean) as Task[]).map(toApiTask),
           saved_filters: saved.filter(Boolean)
         })
       });
+      if (res.status === 401) throw new AuthError();
       if (!res.ok) throw new Error(`push ${res.status}`);
       await db.outbox.bulkDelete(keys);
     }
 
     // 2. Pull what changed on other devices.
     const since = (await db.meta.get('cursor'))?.value ?? 0;
-    const res = await fetch(`${API_URL}/sync/pull?since=${since}`, { headers });
+    const res = await fetch(`${API_URL}/sync/pull?since=${since}`, { headers: headers() });
+    if (res.status === 401) throw new AuthError();
     if (!res.ok) throw new Error(`pull ${res.status}`);
     const data = await res.json();
     const pending = new Set((await db.outbox.toArray()).map((o) => o.key));
@@ -172,6 +200,7 @@ export async function syncNow(): Promise<void> {
     setState('idle');
     if (changed) onRemote?.();
   } catch (err) {
+    if (err instanceof AuthError) return setState('auth');
     console.warn('[sync]', err);
     setState(navigator.onLine ? 'error' : 'offline');
   } finally {
