@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+*.db
+.env
+
+# Node
+node_modules/
+frontend/.svelte-kit/
+frontend/build/
+frontend/dev-dist/

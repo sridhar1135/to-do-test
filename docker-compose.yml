@@ -1,0 +1,26 @@
+# Production-style stack: Postgres + API. Build the PWA separately (see README).
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todo}
+      POSTGRES_DB: todo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: ./backend
+    environment:
+      TODO_DATABASE_URL: postgresql+psycopg://todo:${POSTGRES_PASSWORD:-todo}@db:5432/todo
+      TODO_API_TOKEN: ${TODO_API_TOKEN:?set TODO_API_TOKEN}
+      TODO_CORS_ORIGINS: ${TODO_CORS_ORIGINS:-["http://localhost:5173"]}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  pgdata:
