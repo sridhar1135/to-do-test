@@ -46,8 +46,8 @@ One Docker image serves both the app and the API from the same URL. The access k
 
 1. **Database:** sign up at [neon.tech](https://neon.tech), create a project, and copy its connection string (`postgresql://...`).
 2. **App:** sign up at [render.com](https://render.com) with GitHub, then **New → Blueprint** and pick this repo. Render reads `render.yaml`. Paste the Neon string as `DATABASE_URL` when asked.
-3. When the deploy finishes, open the service's **Environment** tab and copy `TODO_API_TOKEN`. That is your access key.
-4. Open the `https://<name>.onrender.com` URL and enter the access key. On iPhone/iPad: Safari → Share → **Add to Home Screen**. On Mac: Safari → File → **Add to Dock** (or install from Chrome).
+3. In the service's **Environment** tab, set `TODO_USERNAME` and `TODO_PASSWORD` (8+ characters) and save. `TODO_API_TOKEN` is a backup access key.
+4. Open the `https://<name>.onrender.com` URL and sign in. On iPhone/iPad: Safari → Share → **Add to Home Screen**. On Mac: Safari → File → **Add to Dock** (or install from Chrome).
 
 The free Render plan sleeps after 15 minutes idle, so the first sync after a break takes up to a minute. The app still opens instantly and saves changes on the device in the meantime. Every push to `main` redeploys.
 

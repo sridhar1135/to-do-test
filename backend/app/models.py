@@ -75,3 +75,14 @@ class Counter(SQLModel, table=True):
 
     id: int = Field(default=1, primary_key=True)
     value: int = 0
+
+
+class DeviceSession(SQLModel, table=True):
+    """A signed-in device. Only a SHA-256 of the session token is stored."""
+
+    __tablename__ = "device_session"
+
+    token_hash: str = Field(primary_key=True)
+    device: str = ""
+    created_at: datetime = Field(default_factory=utcnow)
+    last_used_at: datetime = Field(default_factory=utcnow)

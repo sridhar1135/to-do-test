@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # Single-user app: the "access key". Every API request sends "Authorization: Bearer <api_token>".
     # The PWA asks for it once on each device; it is never built into the page.
     api_token: str = "change-me"
+    # Sign-in with a username and password (single user). Set both in the host's environment.
+    username: str | None = None
+    password: str | None = None
     cors_origins: list[str] = ["http://localhost:5173"]
     # When set (the Docker image sets it), the built PWA is served from this folder at "/",
     # so the app and API share one URL.

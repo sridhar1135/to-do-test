@@ -12,3 +12,7 @@ services:
         generateValue: true   # your access key; copy it from the Environment tab
       - key: DATABASE_URL
         sync: false           # Neon connection string, entered at setup
+      - key: TODO_USERNAME
+        sync: false           # your sign-in name
+      - key: TODO_PASSWORD
+        sync: false           # your sign-in password (8+ characters)

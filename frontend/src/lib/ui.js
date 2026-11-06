@@ -7,7 +7,7 @@
  */
 import {
   S, liveTasks, liveTags, liveSaved, saveTask, deleteTask, saveTag, saveSaved,
-  startSync, syncStatus, syncNow
+  startSync, syncStatus, syncNow, signOut
 } from './store';
 
 /* ---------- utilities ---------- */
@@ -165,7 +165,8 @@ function phoneHTML(){const u=ui.phone;let body;
       sortedTags().map(t=>{const d=t.name.split('/').length-1,leaf=t.name.slice(t.name.lastIndexOf('/')+1);
         return '<button class="tl-item" data-act="ptag:'+esc(t.name)+'" style="--c:var(--'+t.color+');--d:'+d+'"><i class="dot"></i><span>'+esc(leaf)+'</span><span class="n">'+countTag(t.name)+'</span></button>';}).join('')+
       (liveSaved().length?'<div class="glabel" style="margin-top:24px"><span>Saved filters</span></div>'+
-      liveSaved().map(s=>'<button class="saved-item" data-act="saved:'+s.id+'">'+ic('bookmark')+'<span>'+esc(s.name)+'</span></button>').join(''):'');
+      liveSaved().map(s=>'<button class="saved-item" data-act="saved:'+s.id+'">'+ic('bookmark')+'<span>'+esc(s.name)+'</span></button>').join(''):'')+
+      '<div class="glabel" style="margin-top:24px"><span>Account</span></div><div class="fline">'+(syncStatus().lastSync?'Synced '+ago(syncStatus().lastSync)+' · ':'')+'<button class="link" data-act="logout">Sign out of this device</button></div>';
   } else {
     const L=listBody(u,'phone');
     const chips=liveTags().length?'<div class="chiprow"><button class="fchip'+(u.filter.length?'':' on')+'" data-act="fclear">All</button>'+
@@ -204,10 +205,10 @@ function phoneHTML(){const u=ui.phone;let body;
 /* ---------- Mac / desktop browser ---------- */
 function syncFoot(){const s=syncStatus();
   if(s.state==='offline')return '<div class="side-foot"><i class="off"></i>Offline · changes saved on this device</div>';
-  if(s.state==='auth')return '<div class="side-foot"><i class="err"></i>Not signed in · <button class="link" data-act="signout">Enter access key</button></div>';
+  if(s.state==='auth')return '<div class="side-foot"><i class="err"></i>Not signed in · <button class="link" data-act="signout">Sign in</button></div>';
   if(s.state==='error')return '<div class="side-foot"><i class="err"></i>Can’t reach the server · <button class="link" data-act="sync">Retry</button></div>';
   if(!s.lastSync)return '<div class="side-foot"><i class="off"></i>Syncing…</div>';
-  return '<div class="side-foot"><i></i>Synced '+ago(s.lastSync)+'</div>';}
+  return '<div class="side-foot"><i></i>Synced '+ago(s.lastSync)+' · <button class="link" data-act="logout">Sign out</button></div>';}
 function deskHTML(){const u=ui.desk,c=counts(),L=listBody(u,'desk');
   const smart=[['inbox','inbox'],['today','today'],['upcoming','cal'],['done','done']].map(([v,i])=>'<button class="side-item'+(u.view===v?' on':'')+'" data-act="view:'+v+'">'+ic(i)+TITLES[v]+'<span class="n">'+c[v]+'</span></button>').join('');
   const tags=sortedTags().map(t=>{const d=t.name.split('/').length-1,i=t.name.lastIndexOf('/');
@@ -307,6 +308,7 @@ function act(cmd,arg,e){const u=ui[dev];const t=taskById(u.task);
     case 'del':if(t){deleteTask(t);u.task=null;u.sheet=null;render();}break;
     case 'sync':void syncNow();break;
     case 'signout':window.dispatchEvent(new Event('todo:auth'));break;
+    case 'logout':void signOut().then(()=>window.dispatchEvent(new Event('todo:auth')));break;
   }}
 
 function devFromEvent(e){return root&&root.contains(e.target)?dev:null;}

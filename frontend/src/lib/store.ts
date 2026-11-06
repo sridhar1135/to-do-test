@@ -29,8 +29,48 @@ export function getToken(): string {
 
 const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` });
 
-/** Check a key against the server and keep it if it works. */
-export async function signIn(key: string): Promise<'ok' | 'wrong' | 'unreachable'> {
+type SignInResult = 'ok' | 'wrong' | 'unreachable' | 'not-set-up';
+
+/** Is username/password sign-in set up on the server? */
+export async function passwordLoginEnabled(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/auth/config`);
+    return res.ok && (await res.json()).password_login;
+  } catch {
+    return true;
+  }
+}
+
+/** Sign in with username and password; keeps the returned per-device session token. */
+export async function signInPassword(username: string, password: string): Promise<SignInResult> {
+  try {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (res.status === 401) return 'wrong';
+    if (res.status === 400) return 'not-set-up';
+    if (!res.ok) return 'unreachable';
+    localStorage.setItem(TOKEN_KEY, (await res.json()).token);
+    return 'ok';
+  } catch {
+    return 'unreachable';
+  }
+}
+
+/** Sign out this device (other devices stay signed in). Local tasks stay on the device. */
+export async function signOut() {
+  try {
+    await fetch(`${API_URL}/auth/logout`, { method: 'POST', headers: headers() });
+  } catch {
+    /* offline: the token is still forgotten locally */
+  }
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+/** Check an access key against the server and keep it if it works. */
+export async function signIn(key: string): Promise<SignInResult> {
   try {
     const res = await fetch(`${API_URL}/auth/check`, { headers: { Authorization: `Bearer ${key}` } });
     if (res.status === 401) return 'wrong';

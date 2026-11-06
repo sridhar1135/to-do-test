@@ -83,3 +83,19 @@ def test_database_url_normalized():
 
     s = Settings(DATABASE_URL="postgres://u:p@host:5432/db")
     assert s.database_url == "postgresql+psycopg://u:p@host:5432/db"
+
+
+def test_password_login_sessions(client, monkeypatch):
+    from app.config import settings
+
+    anon = {"Authorization": ""}
+    assert client.get("/auth/config").json() == {"password_login": False}
+    monkeypatch.setattr(settings, "username", "Sridhar")
+    monkeypatch.setattr(settings, "password", "correct horse")
+    assert client.get("/auth/config").json() == {"password_login": True}
+    assert client.post("/auth/login", json={"username": "sridhar", "password": "nope"}, headers=anon).status_code == 401
+    token = client.post("/auth/login", json={"username": "sridhar", "password": "correct horse"}, headers=anon).json()["token"]
+    h = {"Authorization": f"Bearer {token}"}
+    assert client.get("/tasks", headers=h).status_code == 200
+    client.post("/auth/logout", headers=h)
+    assert client.get("/tasks", headers=h).status_code == 401

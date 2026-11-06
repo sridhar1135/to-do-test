@@ -1,18 +1,22 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import '#lib/app.css';
-  import { getToken, loadLocal, signIn, syncNow } from '#lib/store';
+  import { getToken, loadLocal, passwordLoginEnabled, signIn, signInPassword, syncNow } from '#lib/store';
   import { mount } from '#lib/ui.js';
 
   let el: HTMLDivElement;
   let needKey = $state(false);
   let key = $state('');
+  let username = $state('');
+  let password = $state('');
+  let useKey = $state(false);
   let error = $state('');
   let busy = $state(false);
 
   onMount(async () => {
     await loadLocal();
     if (!getToken()) needKey = true;
+    passwordLoginEnabled().then((on) => (useKey = !on));
     window.addEventListener('todo:auth', () => (needKey = true));
     mount(el);
   });
@@ -21,14 +25,19 @@
     e.preventDefault();
     busy = true;
     error = '';
-    const result = await signIn(key.trim());
+    const result = useKey ? await signIn(key.trim()) : await signInPassword(username.trim(), password);
     busy = false;
     if (result === 'ok') {
       needKey = false;
-      key = '';
+      key = password = '';
       void syncNow();
+    } else if (result === 'wrong') {
+      error = useKey ? 'That access key didn’t work.' : 'Wrong username or password.';
+    } else if (result === 'not-set-up') {
+      error = 'Username and password aren’t set up on the server yet. Use the access key for now.';
+      useKey = true;
     } else {
-      error = result === 'wrong' ? 'That access key didn’t work.' : 'Can’t reach the server. Check your connection and try again.';
+      error = 'Can’t reach the server. Check your connection and try again.';
     }
   }
 </script>
@@ -50,10 +59,18 @@
   <div class="signin-scrim">
     <form class="signin" onsubmit={submit}>
       <h2>Sign in</h2>
-      <p>Enter your access key once on this device. Your tasks then sync with your other devices.</p>
-      <input type="password" bind:value={key} placeholder="Access key" autocomplete="current-password" required />
+      <p>Sign in once on this device. Your tasks then sync with your other devices.</p>
+      {#if useKey}
+        <input type="password" bind:value={key} placeholder="Access key" autocomplete="off" required />
+      {:else}
+        <input type="text" bind:value={username} placeholder="Username" autocomplete="username" autocapitalize="none" required />
+        <input type="password" bind:value={password} placeholder="Password" autocomplete="current-password" required />
+      {/if}
       {#if error}<p class="signin-err">{error}</p>{/if}
-      <button class="btn" disabled={busy || !key.trim()}>{busy ? 'Checking…' : 'Sign in'}</button>
+      <button class="btn" disabled={busy || (useKey ? !key.trim() : !username.trim() || !password)}>{busy ? 'Checking…' : 'Sign in'}</button>
+      <button type="button" class="link" onclick={() => ((useKey = !useKey), (error = ''))}>
+        {useKey ? 'Use username and password' : 'Use access key instead'}
+      </button>
       <button type="button" class="link" onclick={() => (needKey = false)}>Use offline for now</button>
     </form>
   </div>
