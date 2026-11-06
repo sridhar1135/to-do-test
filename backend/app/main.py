@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
@@ -18,7 +19,9 @@ async def lifespan(_: FastAPI):
     if settings.frontend_dir and settings.database_url.startswith("sqlite"):
         raise RuntimeError("Set DATABASE_URL to your Postgres database; SQLite data would be lost on every restart.")
     if settings.frontend_dir and settings.password and len(settings.password) < 8:
-        raise RuntimeError("TODO_PASSWORD must be at least 8 characters.")
+        logging.getLogger("uvicorn.error").warning(
+            "The sign-in password is shorter than 8 characters; a longer one is safer on a public URL."
+        )
     init_db()
     yield
 
