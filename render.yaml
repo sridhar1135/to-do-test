@@ -2,7 +2,7 @@
 # comes from Neon (free) — paste its connection string as DATABASE_URL when asked.
 services:
   - type: web
-    name: todo
+    name: sridhartodo   # gives https://sridhartodo.onrender.com
     runtime: docker
     plan: free
     healthCheckPath: /health
