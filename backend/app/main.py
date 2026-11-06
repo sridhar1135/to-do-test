@@ -15,6 +15,8 @@ from .routers import auth, catalog, sync, tasks
 async def lifespan(_: FastAPI):
     if settings.frontend_dir and (settings.api_token == "change-me" or len(settings.api_token) < 20):
         raise RuntimeError("Set TODO_API_TOKEN to a long random string (20+ characters) before going public.")
+    if settings.frontend_dir and settings.database_url.startswith("sqlite"):
+        raise RuntimeError("Set DATABASE_URL to your Postgres database; SQLite data would be lost on every restart.")
     if settings.frontend_dir and settings.password and len(settings.password) < 8:
         raise RuntimeError("TODO_PASSWORD must be at least 8 characters.")
     init_db()
