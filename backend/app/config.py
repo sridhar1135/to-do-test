@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     # The PWA asks for it once on each device; it is never built into the page.
     api_token: str = "change-me"
     # Sign-in with a username and password (single user). Set both in the host's environment.
-    username: str | None = None
-    password: str | None = None
+    username: str | None = Field(default=None, validation_alias=AliasChoices("TODO_USERNAME", "USER_NAME"))
+    password: str | None = Field(default=None, validation_alias=AliasChoices("TODO_PASSWORD", "PASSWORD"))
     cors_origins: list[str] = ["http://localhost:5173"]
     # When set (the Docker image sets it), the built PWA is served from this folder at "/",
     # so the app and API share one URL.
